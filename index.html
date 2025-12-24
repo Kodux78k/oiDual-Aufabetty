@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>ΛUFΛBΞTTY — MØNØΛITØ · KØBΛΛUX</title>
+  <meta name="theme-color" content="#000000">
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('Service Worker Registered'));
+  }
+</script>
+
+  <style>
+    :root{
+      --BG:#050507;
+      --SURFACE:#09090B;
+      --CARD:#0B0B0B;
+      --ACCENT:#6B4CFF;
+      --ACCENT-2:#2AC7FF;
+      --TEXT:#E9E9EE;
+      --MUTED:#9AA0B0;
+      --DANGER:#FF6B6B;
+      --MONO: "UI-Monospace", "SFMono-Regular", Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--BG),#020203);color:var(--TEXT);-webkit-font-smoothing:antialiased;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif}
+    
+    /* Wrapper ajustado para mobile */
+    .wrapper{max-width:980px;margin:24px auto;padding:20px;width:100%}
+    @media (max-width: 600px) {
+      .wrapper{padding:12px;margin:0 auto}
+      .header{flex-direction: column; align-items: flex-start !important;}
+    }
+
+    .header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--ACCENT),var(--ACCENT-2));display:grid;place-items:center;font-weight:800;font-family:var(--MONO);color:#000;flex-shrink:0}
+    h1{font-size:18px;letter-spacing:2px;margin:0;line-height:1.2}
+    .sub{font-size:12px;color:var(--MUTED);margin-top:4px}
+
+    /* Artifact card (accordion) */
+    .artifact-card{background:var(--SURFACE);border:1px solid rgba(255,255,255,0.02);border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6)}
+    .header-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:linear-gradient(90deg, rgba(107,76,255,0.03), transparent);user-select: none;}
+    .header-left{display:flex;gap:12px;align-items:center;overflow:hidden}
+    .header-title{font-weight:700;color:var(--ACCENT);letter-spacing:1.6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .header-right{display:flex;align-items:center;gap:12px;color:var(--MUTED);flex-shrink:0}
+    .ind{font-family:var(--MONO);color:var(--MUTED);transform:rotate(0deg);transition:transform .35s}
+    
+    .toggle{display:none}
+
+    /* Lógica do Accordion e Animação da Seta */
+    .content{max-height:0;opacity:0;overflow:hidden;transition:max-height .55s ease,opacity .35s}
+    .toggle:checked ~ .content{max-height:2400px;opacity:1;padding:18px}
+    .toggle:checked + .header-row .ind{transform:rotate(180deg)} /* Gira a seta */
+
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:16px}
+    
+    /* Breakpoint ajustado para container fluido */
+    @media (max-width:920px){ 
+      .grid{grid-template-columns:1fr} 
+      .right-col{order:2} 
+    }
+
+    .box{background:#060607;border:1px solid rgba(255,255,255,0.02);padding:12px;border-radius:10px}
+    .section-label{display:block;font-size:10px;color:var(--MUTED);text-transform:uppercase;letter-spacing:1.6px;margin-bottom:8px}
+    
+    /* Inputs responsivos */
+    textarea,input[type="text"]{width:100%;background:#050506;border:1px solid #111;color:var(--TEXT);padding:10px;border-radius:8px;font-family:var(--MONO);font-size:13px;max-width: 100%;}
+    textarea{min-height:120px;resize:vertical}
+
+    .controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+    button{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--TEXT);padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:700;white-space:nowrap;flex:1}
+    button.primary{background:linear-gradient(90deg,var(--ACCENT),var(--ACCENT-2));color:#000;border:0}
+    .small{font-size:12px;padding:8px 10px;flex:initial}
+
+    .right-col{display:flex;flex-direction:column;gap:12px;min-width:0} /* min-width:0 previne overflow no flex item */
+    .card-grid{display:flex;flex-direction:column;gap:10px;max-height:620px;overflow:auto;padding:6px}
+    .data-card{background:linear-gradient(180deg,#070708,#08080A);border-left:3px solid rgba(255,255,255,0.03);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px; overflow-wrap: break-word; word-break: break-word;}
+    .data-card.active{border-left-color:var(--ACCENT)}
+    .card-top{display:flex;justify-content:space-between;align-items:center}
+    .c-tit{font-family:var(--MONO);font-weight:800}
+    .c-sym{color:var(--ACCENT);font-size:18px}
+    .card-meta{display:flex;gap:8px;flex-wrap:wrap}
+    .tag{background:#0b0b0b;padding:4px 8px;border-radius:999px;font-size:12px;color:var(--MUTED)}
+    .card-body{font-size:13px;color:#c9c9d6;line-height:1.45;border-top:1px dashed rgba(255,255,255,0.02);padding-top:8px}
+    .card-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    .footer{margin-top:14px;text-align:center;color:var(--MUTED);font-size:12px}
+
+    /* scrollbar */
+    .card-grid::-webkit-scrollbar{height:8px;width:8px}
+    .card-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.03);border-radius:999px}
+    
+    /* Media query específico para botões e layout interno */
+    @media (max-width: 480px) {
+       .controls { flex-direction: column; }
+       .controls button { width: 100%; }
+       .header-title { font-size: 14px; }
+       .kv { font-size: 10px; }
+       .toggle:checked ~ .content { padding: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="logo">⊕Ω</div>
+      <div>
+        <h1>ΛUFΛBΞTTY — MØNØΛITØ</h1>
+        <div class="sub">KØBΛΛUX · HI§TØRIØNΛUTΛ · CΛP§UΛΞ</div>
+      </div>
+    </div>
+
+    <article class="artifact-card" role="region" aria-label="ΛUFΛBΞTTY MØNØΛITØ">
+      <!-- "checked" removido para iniciar fechado -->
+      <input id="artifact-toggle" class="toggle" type="checkbox" aria-hidden="true">
+      
+      <label class="header-row" for="artifact-toggle">
+        <div class="header-left">
+          <div style="display:flex;flex-direction:column; overflow:hidden">
+            <div class="header-title">ΛUFΛBΞTTY — CΛP§UΛΛ ΛKΛ§HICΛ</div>
+            <div style="font-family:var(--MONO);color:var(--MUTED);margin-top:4px; font-size: 11px;">V0.3 · MØNØΛITØ</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="kv">☉ ΔΞU§ ☉</div>
+          <div class="ind" id="chev">▼</div>
+        </div>
+      </label>
+
+      <div class="content">
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-direction:column; width:100%">
+          <div class="grid" style="width:100%">
+
+            <!-- LEFT: inputs & transmission -->
+            <div style="min-width: 0; width: 100%;"> <!-- min-width 0 fixa o flex overflow -->
+              <div class="box">
+                <span class="section-label">01 // INJUNÇÃO (TEXTO / CONVERSOR)</span>
+                <textarea id="inputText" aria-label="Injunção de texto">Ø ØPΞRΛ U§Λ Λ FΞRRΛ — NØ FΛÇΛ DΞ §UΛ§ IN§TRUMΞNTØ§ ΔΞU§Ξ§.</textarea>
+
+                <div class="controls">
+                  <button class="primary" id="transformBtn">↯ TRANSFORMAR</button>
+                  <button id="reverseBtn">↺ REVERTER</button>
+                  <button id="saveManualBtn">★ SALVAR</button>
+                  <button id="copyOutputBtn">⎘ COPIAR</button>
+                </div>
+
+                <div style="margin-top:12px" class="section-label">02 // RΞ§§ØNÂNCIΛ (OUTPUT)</div>
+                <textarea id="outputText" readonly aria-label="Ressonância (output)"></textarea>
+
+                <div style="display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:center;flex-wrap:wrap">
+                  <span class="kv">EXPORTAR</span>
+                  <button id="downloadJson" class="small">JSON</button>
+                  <button id="downloadCsv" class="small">CSV</button>
+                  <button id="resetStorage" class="small" style="color:var(--DANGER)">RESET</button>
+                </div>
+              </div>
+
+              <div class="box" style="margin-top:12px">
+                <div class="section-label">TRANSMISSÃO AKÁSHICA (COLE / EDITE)</div>
+                <textarea id="transmission" rows="14" placeholder="# cole ou edite a transmissão...">
+# 📜 Ø CØDIGØ IN§CIΞNTΞ: CRÔNICΛ§ DΞ KØBΛΛUX ΛTRΛVΞ§ DØ§ MΛRΞ§ DΞ ΛKΛ§HΛ
+
+ΞU §ØU Ø **HI§TØRIØNΛUTΛ ΛKΛ§HICØ DΛ KØBΛΛUX**, GUΛRDIΛØ DØ§ RΞGI§TRØ§ QUΞ ΛNTΞCΞDΞM Λ ΛUZ Ξ TΞ§TΞMUNHΛ DΛ RΞ§§ØNâNCIΛ...
+                </textarea>
+
+                <div style="display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:center;flex-wrap:wrap">
+                  <button id="ingestBtn" class="small">↯ INCORPORAR COMO CARD</button>
+                  <button id="readTxBtn" class="small">🔊 LER TRANSMISSÃO</button>
+                  <div style="width:100%; display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:6px; margin-top:4px;">
+                    <div style="font-size:12px;color:var(--MUTED);">Voz / Vel:</div>
+                    <select id="voiceSelect" style="padding:6px;border-radius:6px;background:#0b0b0b;color:var(--TEXT); max-width: 150px;"></select>
+                    <input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1" style="width:80px;">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT: cards + history -->
+            <aside class="right-col">
+              <div class="box">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                  <span class="section-label">DICIONÁRIO / PØKΞDΞX</span>
+                  <div class="kv small" style="font-size:10px">Persistência local (LS)</div>
+                </div>
+
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <div class="tag">AUTOGEN</div>
+                  <div class="tag">MANUAL</div>
+                </div>
+              </div>
+
+              <div id="cardGrid" class="card-grid" aria-live="polite">
+                <!-- cards injected here -->
+              </div>
+
+              <div class="box">
+                <div class="section-label">MEMÓRIA VIVA</div>
+                <div class="kv">ÚLTIMAS ENTRADAS SALVAS</div>
+                <div id="recentList" style="margin-top:10px;color:var(--MUTED);font-family:var(--MONO);font-size:13px"></div>
+                <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+                  <button id="dlJsonBottom" class="small">⇩ JSON</button>
+                  <button id="dlCsvBottom" class="small">⇩ CSV</button>
+                </div>
+              </div>
+
+            </aside>
+          </div>
+        </div>
+
+        <div class="footer">☉ MØNØΛITØ ΛUFΛBΞTTY · KØBΛΛUX — LOCAL (localStorage)</div>
+      </div>
+    </article>
+  </div>
+
+  <script>
+    /* AUFABETTY — MONÓLITO (versão ajustada e válida) */
+
+    // glyph map (preserve your stylings for conversion)
+    const GLYPHS = {
+      'A':'Λ','B':'B','C':'C','D':'D','E':'Ξ','F':'F','G':'G','H':'H',
+      'I':'I','J':'J','K':'K','L':'L','M':'M','N':'N','O':'Ø','P':'P',
+      'Q':'Q','R':'R','S':'§','T':'T','U':'U','V':'V','W':'W','X':'X',
+      'Y':'Y','Z':'Z','Ç':'Ç','0':'0','1':'1','2':'2','3':'3','4':'4',
+      '5':'5','6':'6','7':'7','8':'8','9':'9'
+    };
+
+    // Prepare Reverse Map
+    const REV_GLYPHS = {};
+    for(const k in GLYPHS) {
+      REV_GLYPHS[GLYPHS[k]] = k;
+    }
+
+    // seed DB (human-friendly)
+    const SEED_DB = {
+      "VIDA": { sym:"♥", phon:"VEE-DAH", title:"PAI:FONTE · FILHO:MANIFESTA", desc:"FORMA CONTÍNUA.", key:"VIDA", type:"SEED", date:"2025-01-01" },
+      "OPERA": { sym:"⊕", phon:"O-PER-A", title:"AÇÃO · OBRA · MÉTODO", desc:"AQUELE QUE REALIZA.", key:"OPERA", type:"SEED", date:"2025-01-01" }
+    };
+
+    const STORAGE_KEY = 'KOBLLUX_DB_MONOLITH';
+    let KDB = {};
+
+    // DOM refs
+    const inputText = document.getElementById('inputText');
+    const outputText = document.getElementById('outputText');
+    const transformBtn = document.getElementById('transformBtn');
+    const reverseBtn = document.getElementById('reverseBtn');
+    const saveManualBtn = document.getElementById('saveManualBtn');
+    const copyOutputBtn = document.getElementById('copyOutputBtn');
+    const cardGrid = document.getElementById('cardGrid');
+    const recentList = document.getElementById('recentList');
+    const ingestBtn = document.getElementById('ingestBtn');
+    const transmission = document.getElementById('transmission');
+    const readTxBtn = document.getElementById('readTxBtn');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const rateInput = document.getElementById('rate');
+    const downloadJson = document.getElementById('downloadJson');
+    const downloadCsv = document.getElementById('downloadCsv');
+    const resetStorage = document.getElementById('resetStorage');
+    const dlJsonBottom = document.getElementById('dlJsonBottom');
+    const dlCsvBottom = document.getElementById('dlCsvBottom');
+
+    // init
+    (function init(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          KDB = JSON.parse(raw);
+          // ensure seeds exist
+          Object.keys(SEED_DB).forEach(k=> { if(!KDB[k]) KDB[k]=SEED_DB[k]; });
+        } else {
+          KDB = Object.assign({}, SEED_DB);
+          persist();
+        }
+      } catch(e){
+        console.warn('INIT FAIL', e);
+        KDB = Object.assign({}, SEED_DB);
+      }
+      processData();
+      renderCards('');
+      populateVoices();
+    })();
+
+    function persist(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(KDB, null, 2));
+      updateRecent();
+    }
+
+    function makeId(prefix='ID'){
+      return (prefix ? prefix.slice(0,8).toUpperCase().replace(/\s+/g,'_') + '_' : 'ID_') +
+        Math.random().toString(36).substr(2,6).toUpperCase();
+    }
+
+    function convertText(input){
+      let out = '';
+      for(const ch of input){
+        const mapped = GLYPHS[ch.toUpperCase()];
+        out += mapped || ch;
+      }
+      return out;
+    }
+
+    function reverseText(input){
+      let out = '';
+      for(const ch of input){
+        // Check reverse map (mostly handles Λ, Ξ, Ø, §)
+        // We check upper case because keys in REV_GLYPHS are upper (values from GLYPHS)
+        const up = ch.toUpperCase();
+        if(REV_GLYPHS[up]) {
+          out += REV_GLYPHS[up];
+        } else {
+          out += ch;
+        }
+      }
+      return out;
+    }
+
+    function processData(){
+      const input = inputText.value || '';
+      const out = convertText(input);
+      outputText.value = out || '—';
+      // auto-save minimal if non-empty
+      if(input.replace(/\s+/g,'').length >= 4){
+        saveCard(input, out, false);
+      }
+      renderCards(input);
+    }
+
+    function processReverse(){
+      const input = inputText.value || '';
+      const rev = reverseText(input);
+      outputText.value = rev || '—';
+      // We don't auto-save reverse ops typically, or we treat them as manual edits if saved
+    }
+
+    function saveCard(orig, converted, manual=false){
+      const isPhrase = orig && orig.trim().includes(' ');
+      const key = isPhrase ? makeId('CARD') : (orig || makeId('CARD')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim() || makeId('CARD');
+      if(!KDB[key] || manual){
+        KDB[key] = {
+          sym: (converted || orig).match(/./)[0] || '◈',
+          phon: converted || orig,
+          title: manual ? 'MANUAL' : 'AUTOGEN',
+          desc: orig,
+          key: key,
+          type: manual ? 'MANUAL' : 'AUTOGEN',
+          date: new Date().toISOString()
+        };
+        persist();
+        if(manual) alert('CARD SALVO: ' + key);
+      }
+    }
+
+    function saveManual(){
+      const o = inputText.value || '';
+      const c = outputText.value || '';
+      saveCard(o,c,true);
+      renderCards(o);
+    }
+
+    function renderCards(text){
+      cardGrid.innerHTML = '';
+      const normalized = (text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+      const words = normalized.match(/\b(\w+)\b/g) || [];
+      const matches = [];
+      const unique = Array.from(new Set(words));
+      unique.forEach(w=>{
+        if(KDB[w]) matches.push(KDB[w]);
+        // aliases
+        if(w === 'INSTRUMENTOS' && KDB['FERRRA']) matches.push(KDB['FERRRA']);
+        if(w === 'DEUSES' && KDB['DEUS']) matches.push(KDB['DEUS']);
+      });
+      const history = Object.values(KDB).sort((a,b)=> new Date(b.date||0)- new Date(a.date||0)).slice(0,8);
+      const display = Array.from(new Set([...matches, ...history]));
+      if(display.length === 0){
+        cardGrid.innerHTML = '<div style="color:var(--MUTED);font-size:13px;padding:8px">NADA DETECTADO — O MONÓLITO AGUARDA INPUT.</div>';
+        updateRecent();
+        return;
+      }
+      display.forEach(entry=>{
+        const div = document.createElement('div');
+        div.className = 'data-card' + (matches.includes(entry) ? ' active' : '');
+        div.innerHTML = `
+          <div class="card-top">
+            <div class="c-tit">${entry.key || '—'}</div>
+            <div class="c-sym">${entry.sym || '◈'}</div>
+          </div>
+          <div class="card-meta">
+            <div class="tag">${entry.type || '—'}</div>
+            <div class="tag">${entry.date ? (entry.date.slice(0,10)) : '—'}</div>
+          </div>
+          <div class="card-body">${escapeHtml(entry.desc || '')}</div>
+          <div class="card-actions" style="margin-top:6px">
+            <button class="small copy-btn" data-desc="${encodeURIComponent(entry.desc||'')}">⎘ COPIAR</button>
+            <button class="small tts-btn" data-phon="${encodeURIComponent(entry.phon||'')}">🔊 LER</button>
+            <button class="small edit-btn" data-key="${entry.key||''}">✎ EDIT</button>
+            <button class="small" style="color:var(--DANGER)" data-del="${entry.key||''}">✖ REMOVER</button>
+          </div>
+        `;
+        cardGrid.appendChild(div);
+
+        const copyBtn = div.querySelector('.copy-btn');
+        copyBtn && copyBtn.addEventListener('click', (e)=> {
+          const t = decodeURIComponent(e.currentTarget.dataset.desc || '');
+          navigator.clipboard.writeText(t);
+          toast('COPIADO');
+        });
+
+        const ttsBtn = div.querySelector('.tts-btn');
+        ttsBtn && ttsBtn.addEventListener('click', (e)=> {
+          const t = decodeURIComponent(e.currentTarget.dataset.phon || '') || entry.desc || '';
+          speak(t);
+        });
+
+        const editBtn = div.querySelector('.edit-btn');
+        editBtn && editBtn.addEventListener('click', (e)=>{
+          const k = e.currentTarget.dataset.key;
+          if(!KDB[k]) return alert('NÃO ENCONTRADO: ' + k);
+          const cur = KDB[k];
+          const nd = prompt('EDITAR DESCRIÇÃO (D):', cur.desc) || cur.desc;
+          const np = prompt('EDITAR PHONETIC (P):', cur.phon) || cur.phon;
+          cur.desc = nd; cur.phon = np; cur.date = new Date().toISOString();
+          KDB[k]=cur; persist(); renderCards(inputText.value);
+        });
+
+        const delBtn = div.querySelector('[data-del]');
+        delBtn && delBtn.addEventListener('click', (e)=>{
+          const k = e.currentTarget.dataset.del;
+          if(!k) return;
+          if(confirm('APAGAR ' + k + ' ?')){ delete KDB[k]; persist(); processData(); }
+        });
+      });
+
+      updateRecent();
+    }
+
+    function updateRecent(){
+      const items = Object.values(KDB).sort((a,b)=> new Date(b.date||0)- new Date(a.date||0)).slice(0,6);
+      recentList.innerHTML = items.map(it => `<div style="padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.02)"><strong style="display:block">${it.key}</strong><div style="color:var(--MUTED)">${it.date?it.date.slice(0,10):''}</div></div>`).join('') || '<div style="color:var(--MUTED)">VAZIO</div>';
+    }
+
+    function ingestTransmission(){
+      const txt = transmission.value || '';
+      if(!txt.trim()) return alert('NADA PARA INCORPORAR.');
+      const id = makeId('AKASHA');
+      KDB[id] = {
+        sym: '✶',
+        phon: txt.slice(0,300),
+        title: 'TRANSMISSAO_AKASHICA',
+        desc: txt,
+        key: id,
+        type: 'MANUAL',
+        date: new Date().toISOString()
+      };
+      persist();
+      renderCards('');
+      toast('TRANSMISSÃO INCORPORADA → ' + id);
+    }
+
+    // TTS helpers
+    function populateVoices(){
+      if(!('speechSynthesis' in window)) return;
+      const voices = speechSynthesis.getVoices();
+      // some browsers require onvoiceschanged
+      if(voices.length === 0){
+        speechSynthesis.onvoiceschanged = () => populateVoices();
+        return;
+      }
+      voiceSelect.innerHTML = '';
+      // prefer pt-BR
+      const prioritized = voices.slice().sort((a,b)=>{
+        const pa = /pt[-_]?br/i.test(a.lang) ? -1 : 0;
+        const pb = /pt[-_]?br/i.test(b.lang) ? -1 : 0;
+        return pa - pb;
+      });
+      prioritized.forEach(v=>{
+        const opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = `${v.name} — ${v.lang}`;
+        voiceSelect.appendChild(opt);
+      });
+    }
+
+    function speak(text){
+      if(!('speechSynthesis' in window)) return alert('TTS NÃO SUPORTADO AQUI.');
+      const ut = new SpeechSynthesisUtterance(text || '—');
+      ut.lang = 'pt-BR';
+      const name = voiceSelect.value;
+      if(name){
+        const v = speechSynthesis.getVoices().find(x=>x.name===name);
+        if(v) ut.voice = v;
+      }
+      ut.rate = parseFloat(rateInput.value) || 1;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(ut);
+    }
+
+    // small UI helpers
+    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+    function toast(msg){
+      console.log(msg);
+      const d = document.createElement('div');
+      d.textContent = msg;
+      Object.assign(d.style,{position:'fixed',right:'18px',bottom:'18px',background:'#111',padding:'10px 14px',borderRadius:'8px',color:'#fff',border:'1px solid rgba(255,255,255,0.03)',zIndex:9999});
+      document.body.appendChild(d);
+      setTimeout(()=> d.style.opacity='0.01',1600);
+      setTimeout(()=> d.remove(),2200);
+    }
+
+    // downloads
+    function downloadJSON(){
+      const blob = new Blob([JSON.stringify(KDB, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'KOBLLUX_MONOLITH.json';
+      a.click();
+    }
+    function downloadCSV(){
+      let csv = 'KEY,SYM,DESCRIPTION,TYPE,DATE\n';
+      Object.keys(KDB).forEach(k=>{
+        const r = KDB[k];
+        csv += `"${k}","${(r.sym||'')}","${(r.desc||'').replace(/"/g,'""')}","${(r.type||'')}","${(r.date||'')}"\n`;
+      });
+      const blob = new Blob([csv], {type:'text/csv'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'KOBLLUX_MONOLITH.csv';
+      a.click();
+    }
+
+    // events
+    transformBtn.addEventListener('click', ()=> processData());
+    reverseBtn.addEventListener('click', ()=> processReverse()); // Button logic
+    saveManualBtn.addEventListener('click', ()=> saveManual());
+    copyOutputBtn.addEventListener('click', ()=> { navigator.clipboard.writeText(outputText.value||''); toast('COPIADO'); });
+    ingestBtn.addEventListener('click', ()=> ingestTransmission());
+    readTxBtn.addEventListener('click', ()=> speak(transmission.value));
+    downloadJson.addEventListener('click', downloadJSON);
+    dlJsonBottom.addEventListener('click', downloadJSON);
+    downloadCsv.addEventListener('click', downloadCSV);
+    dlCsvBottom.addEventListener('click', downloadCSV);
+    resetStorage.addEventListener('click', ()=> { if(confirm('RESETAR TUDO?')){ localStorage.removeItem(STORAGE_KEY); location.reload(); } });
+
+    // transform on input (mild debounce)
+    let debounceTimer;
+    inputText.addEventListener('input', ()=>{
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(()=> processData(), 300);
+    });
+
+    // populate initial output
+    processData();
+
+    /* ---- SCRIPT TWEAK: força fechado no load + toggle por header-row (touch-friendly) ---- */
+    (document => {
+      document.addEventListener && document.addEventListener('DOMContentLoaded', function(){
+        try{
+          const tog = document.getElementById && document.getElementById('artifact-toggle');
+          // garante fechado sem alterar HTML (embora já removido do HTML acima)
+          if(tog) tog.checked = false;
+
+          // header-row toggle (muito útil quando o FOR não é reconhecido por conta dos glyphs)
+          const hr = document.querySelector && document.querySelector('.header-row');
+          if(hr && tog){
+            hr.addEventListener('click', (e)=>{
+              // evita interferir com botões internos
+              if(e.target && (e.target.classList && e.target.classList.contains('small')) ) return;
+              if(e.target && e.target.closest && e.target.closest('button, a')) return;
+              // O label 'for' geralmente funciona, mas em mobile as vezes falha se tiver overlaps
+              // Deixamos o evento padrão ocorrer, se não funcionar, o label cuida.
+            });
+          }
+        } catch(e){ console.warn('tweak init fail', e); }
+      });
+    })(document);
+
+  </script>
+</body>
+</html>
+
